@@ -16,11 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * This class is responsible for handling incoming requests to the server.
- * It parses the request string, creates the appropriate Request object, processes the request,
- * records the response time, and returns the response.
- */
+
 public class RequestHandler {
 
     private final StatsCollector statsCollector;
@@ -45,24 +41,17 @@ public class RequestHandler {
     public Response handleRequest(String requestString) {
         long startTime = System.nanoTime();
         Response response;
-
         try {
-            // Parse the request string and create the appropriate Request object.
             Request request = parse(requestString);
-            // Handle the request and get the response.
             response = request.process(startTime);
 
-            long endTime = System.nanoTime();
-
-            // Calculate and record the response time.
-            long responseTime = endTime - startTime;
+            long responseTime = System.nanoTime() - startTime;
             statsCollector.addResponse(responseTime);
 
         } catch (IllegalArgumentException e) {
             response = new ErrorResponse("(IllegalArgumentException) " + e.getMessage());
         }
 
-        // Return the response.
         return response;
     }
 
@@ -73,7 +62,6 @@ public class RequestHandler {
      * @throws IllegalArgumentException If the request type is not recognized.
      */
     private Request parse(String requestString) throws IllegalArgumentException {
-        // Use the request string to determine the type of request
         if (isStatRequest(requestString)) {
             return new StatRequest(requestString, statsCollector);
         } else if (isComputationRequest(requestString)) {

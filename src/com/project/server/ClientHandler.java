@@ -6,11 +6,6 @@ import com.project.protocol.response.Response;
 import java.io.*;
 import java.net.Socket;
 
-/**
- * This class is responsible for handling client connections to the server.
- * It extends the Thread class and processes incoming requests from the client,
- * sends the response back to the client, and manages the client's connection lifecycle.
- */
 public class ClientHandler extends Thread {
 
     private final Socket socket;
@@ -42,7 +37,7 @@ public class ClientHandler extends Thread {
             while (true) {
                 String line = br.readLine();
                 if (line == null) {
-                    System.err.println("Client abruptly closed connection");
+                    System.err.printf("[%1$tY-%1$tm-%1$td %1$tT] Client %2$s abruptly closed connection", System.currentTimeMillis(), socket.getInetAddress());
                     break;
                 }
                 // Quit Request
@@ -54,9 +49,9 @@ public class ClientHandler extends Thread {
                 bw.flush();
             }
         } catch (IOException e) {
-            System.err.printf("IO error: %s%n", e);
+            System.err.printf("[%1$tY-%1$tm-%1$td %1$tT] IO error: %2$s%n", System.currentTimeMillis(), e);
         } finally {
-            System.out.printf("Client %s disconnected from server%n", this.socket.getInetAddress().toString());
+            System.out.printf("[%1$tY-%1$tm-%1$td %1$tT] Client %2$s disconnected from server%n", System.currentTimeMillis(), socket.getInetAddress());
         }
     }
 }

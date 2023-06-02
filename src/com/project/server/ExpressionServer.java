@@ -17,6 +17,7 @@ public class ExpressionServer {
     private final ExecutorService computationThreadPool;
     private final StatsCollector statsCollector;
     private final Computer computer;
+    private static final String QUIT_COMMAND = "BYE";
 
 
     /**
@@ -29,9 +30,7 @@ public class ExpressionServer {
     public ExpressionServer(int port) {
         this.port = port;
         this.statsCollector = new StatsCollector();
-        // Create a thread pool with a fixed number of threads for handling client connections.
-        this.threadPool = Executors.newFixedThreadPool(1000);
-        // Create a separate thread pool for computations, with as many threads as available processors.
+        this.threadPool = Executors.newFixedThreadPool(10000);
         this.computationThreadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         this.computer = new Computer();
     }
@@ -56,10 +55,10 @@ public class ExpressionServer {
     /**
      * Returns the command string that signifies a client wishes to disconnect.
      *
-     * @return The string "BYE".
+     * @return The QUIT_COMMAND String.
      */
     public String getQuitCommand() {
-        return "BYE";
+        return QUIT_COMMAND;
     }
 
     /**
@@ -76,11 +75,11 @@ public class ExpressionServer {
      */
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.printf("ExpressionServer started on port %s%n", port);
+            System.out.printf("[%1$tY-%1$tm-%1$td %1$tT] ExpressionServer started on port %2$d%n", System.currentTimeMillis(), port);
             while (true) {
                 try {
                     Socket socket = serverSocket.accept();
-                    System.out.println("New connection from client " + socket.getRemoteSocketAddress());
+                    System.out.printf("[%1$tY-%1$tm-%1$td %1$tT] New connection from client %2$s", System.currentTimeMillis(), socket.getRemoteSocketAddress());
                     ClientHandler clientHandler = new ClientHandler(socket, this);
                     threadPool.execute(clientHandler);
                 } catch (IOException e) {
@@ -88,7 +87,7 @@ public class ExpressionServer {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error starting the server on port " + port + " : " + e.getMessage());
+            System.err.printf("Error starting the server on port %1$s due to %2$s", port, e.getMessage());
         }
     }
 

@@ -19,23 +19,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 
-/**
- * The ComputationRequest class handles the processing of com.project.computation requests.
- */
+
 public class ComputationRequest implements Request {
 
     private final String computationString;
     private final ExecutorService computationThreadPool;
     private final Computer computer;
     private String[] requestParts;
-    private final int maxComputationTime = 10;
-    private final int maxQueueTime = 120;
+    private static final int MAX_COMPUTATION_TIME = 10;
+    private static final int MAX_QUEUE_TIME = 120;
 
     /**
      * Constructs a new ComputationRequest instance.
      *
-     * @param computationString the com.project.computation request string
-     * @param computationThreadPool the thread pool for com.project.computation tasks
+     * @param computationString the computation request string
+     * @param computationThreadPool the thread pool for computation tasks
      */
     public ComputationRequest(String computationString, ExecutorService computationThreadPool, Computer computer) {
         this.computationThreadPool = computationThreadPool;
@@ -44,14 +42,13 @@ public class ComputationRequest implements Request {
     }
 
     /**
-     * Processes the com.project.computation request.
+     * Processes the computation request.
      *
-     * @param startTime the start time of the com.project.computation
-     * @return a Response object that represents the result of the com.project.computation
+     * @param startTime the start time of the computation
+     * @return a Response object that represents the result of the computation
      */
     @Override
     public Response process(long startTime) {
-        // Split the com.project.computation string by ";"
         this.requestParts = computationString.split(";");
         if (requestParts.length < 3) {
             return new ErrorResponse("Invalid computation request format: request parts < 3");
@@ -89,26 +86,26 @@ public class ComputationRequest implements Request {
             Thread innerThread = new Thread(innerTask);
             innerThread.start();
             try {
-                return innerTask.get(maxComputationTime, TimeUnit.SECONDS);
+                return innerTask.get(MAX_COMPUTATION_TIME, TimeUnit.SECONDS);
             } catch (InterruptedException | ExecutionException e) {
-                System.err.println(e.getMessage());
-                return new ErrorResponse("Can't process the request.");
+                System.err.printf("Cannot compute due to %s%n", e);
+                return new ErrorResponse(String.format("Cannot compute due to %s", e));
             } catch (TimeoutException e) {
                 innerThread.interrupt();
-                String errorMessage = "(ComputationTimeoutException) : The computation took longer " +
-                        "than " + maxComputationTime + " seconds.";
+                String errorMessage = String.format("(ComputationTimeoutException) : The computation took longer " +
+                        "than %d seconds.", MAX_COMPUTATION_TIME);
                 return new ErrorResponse(errorMessage);
             }
         });
 
         try {
-            return futureResponse.get(maxQueueTime, TimeUnit.SECONDS);
+            return futureResponse.get(MAX_QUEUE_TIME, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException e) {
-            System.err.println(e.getMessage());
-            return new ErrorResponse("Can't process the request.");
+            System.err.printf("Cannot compute due to %s%n", e);
+            return new ErrorResponse(String.format("Cannot compute due to %s", e));
         } catch (TimeoutException e) {
-            String errorMessage = "(QueueTimeoutException) : The computation request stayed in the " +
-                    "queue for more than " + maxQueueTime + " seconds.";
+            String errorMessage = String.format("(QueueTimeoutException) : The computation request stayed in the " +
+                    "queue for more than %d seconds.", MAX_QUEUE_TIME);
             return new ErrorResponse(errorMessage);
         }
     }
@@ -116,13 +113,12 @@ public class ComputationRequest implements Request {
      * Parses a VariableValuesFunction object from the computation request string.
      *
      * @return a VariableValuesFunction object
-     * @throws IllegalArgumentException if the variable values in the computation request string are invalid
      */
     private VariableValuesFunction parseVariableValuesFunction() throws VariableValuesFunctionException {
-        VariableValuesFunctionParser parser = new VariableValuesFunctionParser();
+        VariableValuesFunctionParser variableValuesFunctionParser = new VariableValuesFunctionParser();
         String[] kindParts = requestParts[0].split("_");
         if (kindParts.length != 2) {
-            throw new IllegalArgumentException("Invalid computation kind or values kind format.");
+            throw new IllegalArgumentException("Invalid computation type format.");
         }
 
         String computationKindString = kindParts[0];
@@ -131,7 +127,7 @@ public class ComputationRequest implements Request {
         Computer.ComputationKind computationKind = Computer.ComputationKind.fromRequestString(computationKindString);
         VariableValuesFunction.ValuesKind valuesKind = VariableValuesFunction.ValuesKind.fromRequestString(valuesKindString);
 
-        return parser.parse(requestParts[1], valuesKind, computationKind);
+        return variableValuesFunctionParser.parse(requestParts[1], valuesKind, computationKind);
     }
     /**
      * Parses a list of Expression objects from the computation request string.
@@ -153,8 +149,8 @@ public class ComputationRequest implements Request {
                     throw new ExpressionParsingException("Invalid expression format.");
                 }
             } catch (ExpressionParsingException e) {
-                throw new ExpressionParsingException("Parsing error for " +
-                        "expression '" + expressionString + "' : " + e.getMessage());
+                String errorMessage = String.format("Parsing error for expression '%1$s' : %2$s", expressionString, e.getMessage());
+                throw new ExpressionParsingException(errorMessage);
             }
             expressions.add(new Expression(node, expressionString));
         }

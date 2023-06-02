@@ -1,20 +1,10 @@
 package com.project.protocol.request;
-
 import com.project.protocol.response.OkResponse;
 import com.project.protocol.response.Response;
 import com.project.service.StatsCollector;
-
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * This class represents a statistical request for the com.project.server.
- * It supports requests for total requests, average response time, and maximum response time.
- * The server's StatsCollector is used to gather the requested statistics.
- * The response is an OkResponse if the requested statistic is valid, or an ErrorResponse otherwise.
- *
- * @package com.project.protocol.request
- */
 public class StatRequest implements Request {
 
     public enum StatType {
@@ -78,7 +68,7 @@ public class StatRequest implements Request {
             case STAT_MAX_TIME:
                 return new OkResponse(startTime, statsCollector.getMaxResponseTimeNanoseconds() / 1_000_000_000.0);
             default:
-                throw new IllegalArgumentException("Invalid stat type: " + statType);
+                throw new IllegalArgumentException(String.format("Invalid stat type: %s", statType));
         }
     }
 }

@@ -47,15 +47,19 @@ public class Computer {
             return stringToEnumMap.get(computationKindString);
         }
     }
-
+    /**
+     * The Computer class is implemented as a single instance in this program, even though it's stateless.
+     * This design choice is driven by the potential future need to maintain some state in the Computer.
+     * If such need arises, having a single instance will prevent the need for refactoring existing code.
+     */
     public Computer() {}
 
     /**
      * Computes the result based on the computation kind specified in the variableValuesFunction.
      *
      * @return the result of the computation
-     * @throws IllegalArgumentException if an invalid computation kind is specified
-     * @throws DivisionByZeroException if a division by zero is attempted
+     * @throws DivisionByZeroException if a division by 0 is attempted
+     * @throws ZeroOverZeroException if a division 0 / 0 is attempted
      * @throws NotANumberException if a NaN is found
      */
     public double computeResult(List<List<Double>> valueTuples, VariableValuesFunction variableValuesFunction, List<Expression> expressions) throws IllegalArgumentException, DivisionByZeroException, ZeroOverZeroException, NotANumberException {
@@ -74,14 +78,6 @@ public class Computer {
         }
     }
 
-    public static double round(double value) {
-        int places = 6;
-
-        long factor = (long) Math.pow(10, places);
-        value = value * factor;
-        long tmp = Math.round(value);
-        return (double) tmp / factor;
-    }
     /**
      * Private helper function to calculate min and max of the provided expressions
      * for all tuples of variable values, for avoiding redundant code lines.
@@ -89,9 +85,6 @@ public class Computer {
      * @param valueTuples list of tuples of variable values
      * @param variableValuesFunction the function containing the variable names and their corresponding indices
      * @param expressions the expressions to compute
-     * @throws DivisionByZeroException if a division by 0 is attempted
-     * @throws ZeroOverZeroException if a division 0 / 0 is attempted
-     * @throws NotANumberException if a NaN is found
      * @return the minimum value
      */
     private double[] computeMinMax(List<List<Double>> valueTuples, VariableValuesFunction variableValuesFunction, List<Expression> expressions) throws DivisionByZeroException, ZeroOverZeroException, NotANumberException {
@@ -123,47 +116,14 @@ public class Computer {
 
         return new double[] {min, max};
     }
-
-    /**
-     * Computes the maximum value of the provided expressions for all tuples of variable values.
-     *
-     * @param valueTuples list of tuples of variable values
-     * @param expressions the expressions to compute
-     * @throws DivisionByZeroException if a division by 0 is attempted
-     * @throws ZeroOverZeroException if a division 0 / 0 is attempted
-     * @throws NotANumberException if a NaN is found
-     * @return the maximum value
-     */
     private double computeMax(List<List<Double>> valueTuples, VariableValuesFunction variableValuesFunction, List<Expression> expressions) throws DivisionByZeroException, ZeroOverZeroException, NotANumberException {
         double[] minMax = computeMinMax(valueTuples, variableValuesFunction, expressions);
         return minMax[MAX_INDEX]; // Max
     }
-    /**
-     * Computes the minimum value of the provided expressions for all tuples of variable values.
-     *
-     * @param valueTuples list of tuples of variable values
-     * @param variableValuesFunction the function containing the variable names and their corresponding indices
-     * @param expressions the expressions to compute
-     * @throws DivisionByZeroException if a division by 0 is attempted
-     * @throws ZeroOverZeroException if a division 0 / 0 is attempted
-     * @throws NotANumberException if a NaN is found
-     * @return the minimum value
-     */
     private double computeMin(List<List<Double>> valueTuples, VariableValuesFunction variableValuesFunction, List<Expression> expressions) throws DivisionByZeroException, ZeroOverZeroException, NotANumberException {
         double[] minMax = computeMinMax(valueTuples, variableValuesFunction, expressions);
         return minMax[MIN_INDEX];
     }
-    /**
-     * Computes the average of the first provided expression for all tuples of variable values.
-     *
-     * @param valueTuples list of tuples of variable values
-     * @param variableValuesFunction the function containing the variable names and their corresponding indices
-     * @param expressions the expressions to compute
-     * @throws DivisionByZeroException if a division by 0 is attempted
-     * @throws ZeroOverZeroException if a division 0 / 0 is attempted
-     * @throws NotANumberException if a NaN is found
-     * @return the average value
-     */
     private double computeAvg(List<List<Double>> valueTuples, VariableValuesFunction variableValuesFunction, List<Expression> expressions) throws DivisionByZeroException, ZeroOverZeroException, NotANumberException {
         double sum = 0;
         Expression expression = expressions.get(0);
@@ -185,50 +145,26 @@ public class Computer {
      * @param expression the mathematical expression to evaluate
      * @param variableValuesFunction the function containing the variable names and their corresponding indices
      * @param tuple a tuple of variable values
-     * @throws DivisionByZeroException if a division by 0 is attempted
-     * @throws ZeroOverZeroException if a division 0 / 0 is attempted
-     * @throws NotANumberException if a NaN is found
      * @return the result of the evaluation
      */
     private double evaluateExpression(Expression expression, VariableValuesFunction variableValuesFunction, List<Double> tuple) throws DivisionByZeroException, ZeroOverZeroException, NotANumberException {
         return evaluateNode(expression.getRoot(), variableValuesFunction, tuple);
     }
-
-    /**
-     * Evaluates a given node in a mathematical expression for a specific tuple of variable values.
-     *
-     * @param node the node to evaluate
-     * @param variableValuesFunction the function containing the variable names and their corresponding indices
-     * @param tuple a tuple of variable values
-     * @return the result of the evaluation
-     * @throws DivisionByZeroException if a division by 0 is attempted
-     * @throws ZeroOverZeroException if a division 0 / 0 is attempted
-     */
     private double evaluateNode(Node node, VariableValuesFunction variableValuesFunction, List<Double> tuple) throws DivisionByZeroException, ZeroOverZeroException, NotANumberException {
-
-        // If the node is a constant, return its value
         if (node instanceof Constant) {
             return ((Constant) node).getValue();
         }
-
-        // If the node is a variable, return the corresponding value from the tuple
         else if (node instanceof Variable) {
             String variableName = ((Variable) node).getName();
             int variableIndex = variableValuesFunction.getVariableIndex(variableName);
             return tuple.get(variableIndex);
         }
-
-        // If the node is an operator, calculate the result of the operation
         else {
             Operator operator = (Operator) node;
-
             List<Node> children = operator.getChildren();
-
-            // Evaluate the child nodes and collect the results in an array
             double[] childValues = children.stream()
                     .mapToDouble(child -> evaluateNode(child, variableValuesFunction, tuple))
                     .toArray();
-
             if (Double.isNaN(childValues[0]) || Double.isNaN(childValues[1])) {
                 throw new NotANumberException("NaN obtained during computation");
             }
@@ -239,10 +175,7 @@ public class Computer {
                     throw new DivisionByZeroException("Division by zero at node '" + node + "'");
                 }
             }
-
-            // Apply the operator's function to the array of child values and return the result
             return operator.getType().getFunction().apply(childValues);
         }
     }
-
 }

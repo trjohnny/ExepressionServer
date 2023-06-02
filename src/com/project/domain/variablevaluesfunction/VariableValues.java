@@ -15,9 +15,9 @@ public class VariableValues {
         }
 
         this.variable = variable;
-        this.lower = Computer.round(lower);
-        this.step = Computer.round(step);
-        this.upper = Computer.round(upper);
+        this.lower = lower;
+        this.step = step;
+        this.upper = upper;
     }
     public String getVariable() {
         return variable;
